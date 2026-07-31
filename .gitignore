@@ -1,0 +1,94 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments (never commit installed CUDA/PyTorch binaries)
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Packaging and build products
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Jupyter temporary files and generated notebook exports
+.ipynb_checkpoints/
+*.nbconvert.ipynb
+
+# IDE and operating-system state
+.vscode/
+.idea/
+.agents/
+.codex/
+.claude/
+*.code-workspace
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+
+# Secrets and machine-local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+secrets*.json
+
+# Logs, profiler traces and scheduler output
+*.log
+*.out
+*.err
+slurm-*.out
+*.prof
+*.trace
+wandb/
+mlruns/
+lightning_logs/
+runs/
+
+# Training artifacts and model checkpoints
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+
+# Generated experiment outputs. Keep only the placeholder directory in Git.
+project/outputs/**
+!project/outputs/.gitkeep
+project/notebooks/outputs/**
+outputs/**
+!outputs/.gitkeep
+
+# Local datasets, scratch space and downloaded archives
+/data/
+/datasets/
+/scratch/
+/tmp/
+/temp/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+
+# Native crash dumps
+core
+core.*

@@ -1,0 +1,71 @@
+seed: 42
+
+data:
+  image_size: 32
+  train_size: 10000
+  val_size: 2000
+  test_size: 4000
+  train_alignment_probability: 0.95
+  val_alignment_probability: 0.95
+  min_shape_size: 10
+  max_shape_size: 16
+
+model:
+  hidden_dim: 32
+
+training:
+  batch_size: 128
+  learning_rate: 0.001
+  max_epochs: 30
+  patience: 5
+  num_workers: 2
+  checkpoint_epochs: [1, 2, 5, 10]
+
+controls:
+  color_only:
+    variant: color_only
+  shape_only:
+    variant: shape_only
+  color_permutation:
+    variant: original
+    train_alignment_probability: 0.5
+    val_alignment_probability: 0.5
+
+multi_seed:
+  seeds: [42, 43, 44, 45, 46]
+  output_dir: outputs/sanity_check/multi_seed
+  functional_thresholds:
+    shortcut_gap: 0.9
+    transition_gap: 0.5
+    robust_conflicting_accuracy: 0.9
+
+one_shot_pruning:
+  seeds: [42, 45, 46]
+  sparsity: 0.50
+  output_dir: outputs/sanity_check/one_shot_pruning
+  random_mask_seed_offset: 10000
+  escape_gap_threshold: 0.20
+  shortcut_phase_gap_threshold: 0.80
+
+sparsity_sweep:
+  sparsities: [0.50, 0.80, 0.90]
+  output_dir: outputs/sanity_check/sparsity_sweep
+
+rewinding:
+  seeds: [42, 45, 46]
+  mask_stage: robust
+  sparsity: 0.80
+  states: [init, shortcut, transition, robust]
+  output_dir: outputs/sanity_check/rewinding
+
+imp:
+  seeds: [42, 45, 46]
+  pruning_fraction: 0.20
+  rounds: 13
+  rewind_state: init
+  mask_selection: final
+  measure_counterfactual_sensitivity: true
+  output_dir: outputs/sanity_check/imp
+
+output_dir: outputs/sanity_check
+shortcut_gap_threshold: 0.20
