@@ -1,4 +1,4 @@
-# Python bytecode and caches
+# Python bytecode and tool caches
 __pycache__/
 *.py[cod]
 *$py.class
@@ -11,36 +11,37 @@ __pycache__/
 .coverage.*
 htmlcov/
 
-# Virtual environments (never commit installed CUDA/PyTorch binaries)
+# Virtual environments
 .venv/
 venv/
 env/
 ENV/
 .python-version
 
-# Packaging and build products
+# Build and packaging artifacts
 build/
 dist/
 *.egg-info/
 .eggs/
 pip-wheel-metadata/
 
-# Jupyter temporary files and generated notebook exports
+# Jupyter temporary and generated files
 .ipynb_checkpoints/
 *.nbconvert.ipynb
+notebooks/outputs/**
 
-# IDE and operating-system state
+# Editors and local agent state
 .vscode/
 .idea/
 .agents/
 .codex/
 .claude/
 *.code-workspace
-.DS_Store
-Thumbs.db
-*~
 *.swp
 *.swo
+*~
+.DS_Store
+Thumbs.db
 
 # Secrets and machine-local configuration
 .env
@@ -51,7 +52,7 @@ Thumbs.db
 credentials*.json
 secrets*.json
 
-# Logs, profiler traces and scheduler output
+# Logs, profilers and experiment trackers
 *.log
 *.out
 *.err
@@ -63,21 +64,18 @@ mlruns/
 lightning_logs/
 runs/
 
-# Training artifacts and model checkpoints
+# Model checkpoints and exported weights
 *.pt
 *.pth
 *.ckpt
 *.onnx
 *.safetensors
 
-# Generated experiment outputs. Keep only the placeholder directory in Git.
-project/outputs/**
-!project/outputs/.gitkeep
-project/notebooks/outputs/**
+# Generated experiment outputs; retain only the placeholder
 outputs/**
 !outputs/.gitkeep
 
-# Local datasets, scratch space and downloaded archives
+# Local datasets, scratch directories and archives
 /data/
 /datasets/
 /scratch/

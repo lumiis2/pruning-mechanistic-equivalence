@@ -25,7 +25,7 @@ their internal organization, and test whether those measurements predict
 held-out behavior better than accuracy, sparsity, and shortcut-gap metrics.
 
 The full motivation and experimental design are in
-[`research-proposal.md`](../research-proposal.md).
+[`research-proposal.md`](research-proposal.md).
 
 ## Preliminary findings
 
