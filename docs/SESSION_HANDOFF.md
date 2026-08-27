@@ -106,10 +106,32 @@ depends on the corresponding state still existing under `CODEX_HOME`.
 
 ## Next steps
 
-- Install the standalone official CLI or export the verified extension binary
-  directory, then run the CLI continuity test above.
-- Ask the administrator for persistent local storage supporting Unix sockets,
-  locks, and SQLite, then migrate the complete `CODEX_HOME` there.
-- Repair or recreate the Python environment before changing experimental code.
-- Replace this section as work progresses instead of accumulating a full chat
-  transcript.
+- Validate the pending mechanistic-metric changes with the remote `.venv310`.
+  The local machine does not need a separate experiment environment.
+- Run `scripts/slurm/run_mechanistic_smoke_generic.sbatch`, which now performs
+  the CUDA preflight, full unit-test suite, and discovery-only smoke test in the
+  same Slurm allocation.
+- The job finishes by running `scripts/validate_mechanistic_smoke.py`; it must
+  validate the artifact schema, finite metrics, balanced counts, all four
+  groups, and all 120 causal measurements before reporting success.
+- Inspect the new smoke artifacts for balanced-head aligned/conflicting/worst-
+  group/shortcut-gap metrics and signed, absolute, flip-rate, and per-group
+  causal effects.
+- If the smoke passes, document its job ID and artifact validation before
+  preparing the full discovery run. Do not run or inspect evaluation.
+
+## Pending local changes
+
+The current local work adds the metrics required after smoke job `6627`:
+
+- balanced probe aligned and conflicting accuracy, worst-group accuracy, and
+  shortcut gap;
+- signed and absolute target-class probability and logit-margin changes;
+- causal metrics separated across all four Shape--Color groups;
+- explicit shape-swap semantics relative to the original shape class;
+- unit tests covering shortcut metrics and signed/grouped causal effects.
+
+These changes compile syntactically but have not yet been executed with PyTorch
+locally. Validation is intentionally deferred to the existing remote
+`.venv310`, followed by the discovery smoke job. Replace this pending note with
+the recorded validation result after the job completes.

@@ -117,10 +117,15 @@ def train_balanced_probe(
     for group in range(4):
         mask = groups[test_idx].eq(group)
         group_accuracy[str(group)] = float(predictions[mask].eq(labels[test_idx][mask]).float().mean())
+    aligned_accuracy = (group_accuracy["0"] + group_accuracy["3"]) / 2
+    conflicting_accuracy = (group_accuracy["1"] + group_accuracy["2"]) / 2
     return {
         "validation_accuracy": best_val,
         "test_accuracy": float(predictions.eq(labels[test_idx]).float().mean()),
+        "test_aligned_accuracy": aligned_accuracy,
+        "test_conflicting_accuracy": conflicting_accuracy,
         "test_worst_group_accuracy": min(group_accuracy.values()),
+        "test_shortcut_gap": aligned_accuracy - conflicting_accuracy,
         "test_group_accuracy": group_accuracy,
         "train_count": len(train_idx), "validation_count": len(val_idx), "test_count": len(test_idx),
     }
@@ -132,11 +137,44 @@ def _effects(reference: Tensor, intervention: Tensor, labels: Tensor) -> dict[st
     other = 1 - labels
     ref_margin = reference.gather(1, labels[:, None]).squeeze(1) - reference.gather(1, other[:, None]).squeeze(1)
     int_margin = intervention.gather(1, labels[:, None]).squeeze(1) - intervention.gather(1, other[:, None]).squeeze(1)
+    probability_change = int_prob - ref_prob
+    margin_change = int_margin - ref_margin
     return {
-        "probability_change_sum": float((int_prob - ref_prob).abs().sum()),
-        "logit_margin_change_sum": float((int_margin - ref_margin).abs().sum()),
+        "probability_signed_change_sum": float(probability_change.sum()),
+        "probability_absolute_change_sum": float(probability_change.abs().sum()),
+        "logit_margin_signed_change_sum": float(margin_change.sum()),
+        "logit_margin_absolute_change_sum": float(margin_change.abs().sum()),
         "prediction_flip_count": int(intervention.argmax(1).ne(reference.argmax(1)).sum()),
         "count": len(labels),
+    }
+
+
+def _accumulate_effects(
+    totals: dict[str, dict[str, dict[str, float]]],
+    key: str,
+    reference: Tensor,
+    intervention: Tensor,
+    labels: Tensor,
+    groups: Tensor,
+) -> None:
+    for scope, mask in [("overall", torch.ones_like(groups, dtype=torch.bool))] + [
+        (str(group), groups.eq(group)) for group in range(4)
+    ]:
+        if not bool(mask.any()):
+            continue
+        for metric, value in _effects(reference[mask], intervention[mask], labels[mask]).items():
+            totals[key][scope][metric] += value
+
+
+def _finalize_effects(values: dict[str, float]) -> dict[str, float | int]:
+    count = values["count"]
+    return {
+        "target_probability_signed_change": values["probability_signed_change_sum"] / count,
+        "target_probability_absolute_change": values["probability_absolute_change_sum"] / count,
+        "target_logit_margin_signed_change": values["logit_margin_signed_change_sum"] / count,
+        "target_logit_margin_absolute_change": values["logit_margin_absolute_change_sum"] / count,
+        "prediction_flip_rate": values["prediction_flip_count"] / count,
+        "sample_count": int(count),
     }
 
 
@@ -144,23 +182,24 @@ def _effects(reference: Tensor, intervention: Tensor, labels: Tensor) -> dict[st
 def counterfactual_and_patching_metrics(
     model: nn.Module, loader: DataLoader, device: torch.device,
     channel_patching: bool = True,
-) -> dict[str, dict[str, float]]:
+) -> dict[str, dict[str, Any]]:
     """Measure input, full-layer control, and individual-channel patch effects."""
     model.eval()
-    totals: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
+    totals: dict[str, dict[str, dict[str, float]]] = defaultdict(
+        lambda: defaultdict(lambda: defaultdict(float))
+    )
     for batch in loader:
         labels = batch["shape"].to(device)
+        groups = batch["group"].to(device)
         original_logits, original_acts = model(batch["image"].to(device), return_activations=True)
         for factor in ("color", "shape"):
             swapped_logits, swapped_acts = model(batch[f"{factor}_image"].to(device), return_activations=True)
             key = f"input_{factor}"
-            for metric, value in _effects(original_logits, swapped_logits, labels).items():
-                totals[key][metric] += value
+            _accumulate_effects(totals, key, original_logits, swapped_logits, labels, groups)
             for layer in LAYERS:
                 patched = model(batch["image"].to(device), activation_replacements={layer: swapped_acts[layer]})
                 key = f"full_patch_{factor}_{layer}"
-                for metric, value in _effects(original_logits, patched, labels).items():
-                    totals[key][metric] += value
+                _accumulate_effects(totals, key, original_logits, patched, labels, groups)
                 if channel_patching:
                     channel_count = original_acts[layer].shape[1]
                     for channel in range(channel_count):
@@ -171,15 +210,11 @@ def counterfactual_and_patching_metrics(
                             activation_replacements={layer: replacement},
                         )
                         key = f"channel_patch_{factor}_{layer}_{channel:02d}"
-                        for metric, value in _effects(original_logits, patched, labels).items():
-                            totals[key][metric] += value
+                        _accumulate_effects(totals, key, original_logits, patched, labels, groups)
     results = {}
-    for key, values in totals.items():
-        count = values.pop("count")
-        results[key] = {
-            "target_probability_absolute_change": values["probability_change_sum"] / count,
-            "target_logit_margin_absolute_change": values["logit_margin_change_sum"] / count,
-            "prediction_flip_rate": values["prediction_flip_count"] / count,
-            "sample_count": int(count),
+    for key, scoped_values in totals.items():
+        results[key] = _finalize_effects(scoped_values["overall"])
+        results[key]["group_metrics"] = {
+            str(group): _finalize_effects(scoped_values[str(group)]) for group in range(4)
         }
     return results

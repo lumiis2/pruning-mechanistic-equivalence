@@ -90,6 +90,11 @@ def main() -> None:
         "max_samples": args.max_samples, "dataset": "canonical balanced test split",
         "probe_split": "group-stratified 60/20/20", "seed_policy": "model seed",
         "experiment_split": args.split, "channel_patching": args.channel_patching,
+        "causal_effect_reference": "probability and logit margin of the original shape class",
+        "shape_swap_interpretation": (
+            "A shape swap changes the true class. Signed effects are measured relative to the "
+            "original class and are not counterfactual accuracy."
+        ),
     }
     save_json(run_config, args.output_dir / "config.json")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -137,7 +142,10 @@ def main() -> None:
             "original_worst_group_accuracy": float(row["worst_group_accuracy"]),
             "original_shortcut_gap": float(row["shortcut_gap"]),
             "balanced_hidden_head_accuracy": probes["hidden"]["shape"]["test_accuracy"],
+            "balanced_hidden_head_aligned_accuracy": probes["hidden"]["shape"]["test_aligned_accuracy"],
+            "balanced_hidden_head_conflicting_accuracy": probes["hidden"]["shape"]["test_conflicting_accuracy"],
             "balanced_hidden_head_worst_group_accuracy": probes["hidden"]["shape"]["test_worst_group_accuracy"],
+            "balanced_hidden_head_shortcut_gap": probes["hidden"]["shape"]["test_shortcut_gap"],
             "shape_probe_accuracy": {layer: probes[layer]["shape"]["test_accuracy"] for layer in LAYERS},
             "color_probe_accuracy": {layer: probes[layer]["color"]["test_accuracy"] for layer in LAYERS},
             "causal_metrics": causal,

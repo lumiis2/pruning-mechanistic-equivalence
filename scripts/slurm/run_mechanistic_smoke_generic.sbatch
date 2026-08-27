@@ -17,6 +17,11 @@ set -Eeuo pipefail
 PROJECT_ROOT="${SLURM_SUBMIT_DIR:?Submit from the repository root}"
 cd "${PROJECT_ROOT}"
 
+if [[ ! -f .venv310/bin/activate ]]; then
+    echo "Missing ${PROJECT_ROOT}/.venv310/bin/activate" >&2
+    exit 2
+fi
+
 module purge
 module load python/3.10.13
 module load pytorch/2.5.1-py3.10-cuda12.8
@@ -46,10 +51,17 @@ print("gpu=", torch.cuda.get_device_name(0))
 print("cuda_matmul=", value.item())
 PY
 
-python scripts/run_mechanistic_characterization.py \
+echo "=== TESTS ==="
+PYTHONPATH=. python -m pytest -q
+
+echo "=== MECHANISTIC DISCOVERY SMOKE ==="
+srun --kill-on-bad-exit=1 python scripts/run_mechanistic_characterization.py \
     --split discovery \
     --smoke-test \
     --no-resume \
     --output-dir outputs/mechanistic_characterization_validation
+
+python scripts/validate_mechanistic_smoke.py \
+    outputs/mechanistic_characterization_validation/smoke_test
 
 echo "MECHANISTIC DISCOVERY SMOKE PASSED"
