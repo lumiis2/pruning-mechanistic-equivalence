@@ -17,7 +17,8 @@ set -Eeuo pipefail
 PROJECT_ROOT="${SLURM_SUBMIT_DIR:?Submit from the repository root}"
 JOB_SCRIPT="scripts/slurm/run_mechanistic_smoke_generic.sbatch"
 MECH_RETRY_COUNT="${MECH_RETRY_COUNT:-0}"
-MECH_MAX_RETRIES="${MECH_MAX_RETRIES:-8}"
+MECH_MAX_RETRIES="${MECH_MAX_RETRIES:-30}"
+MECH_RETRY_DELAY_MINUTES="${MECH_RETRY_DELAY_MINUTES:-2}"
 cd "${PROJECT_ROOT}"
 
 resubmit_after_preflight_failure() {
@@ -28,9 +29,10 @@ resubmit_after_preflight_failure() {
     fi
     next_retry=$((MECH_RETRY_COUNT + 1))
     submission="$(sbatch \
-        --export=ALL,MECH_RETRY_COUNT="${next_retry}",MECH_MAX_RETRIES="${MECH_MAX_RETRIES}" \
+        --begin="now+${MECH_RETRY_DELAY_MINUTES}minutes" \
+        --export=ALL,MECH_RETRY_COUNT="${next_retry}",MECH_MAX_RETRIES="${MECH_MAX_RETRIES}",MECH_RETRY_DELAY_MINUTES="${MECH_RETRY_DELAY_MINUTES}" \
         "${JOB_SCRIPT}")"
-    echo "GPU preflight failed on ${SLURM_JOB_NODELIST}. ${submission}; retry=${next_retry}/${MECH_MAX_RETRIES}" >&2
+    echo "GPU preflight failed on ${SLURM_JOB_NODELIST}. ${submission}; retry=${next_retry}/${MECH_MAX_RETRIES}; eligible in ${MECH_RETRY_DELAY_MINUTES} minutes" >&2
 }
 
 if [[ ! -f .venv310/bin/activate ]]; then
@@ -50,7 +52,7 @@ export MPLBACKEND=Agg
 export PYTHONPATH=.
 export PYTHONUNBUFFERED=1
 
-echo "job=${SLURM_JOB_ID} node=${SLURM_JOB_NODELIST} retry=${MECH_RETRY_COUNT}/${MECH_MAX_RETRIES}"
+echo "job=${SLURM_JOB_ID} node=${SLURM_JOB_NODELIST} retry=${MECH_RETRY_COUNT}/${MECH_MAX_RETRIES} delay=${MECH_RETRY_DELAY_MINUTES}m"
 if ! nvidia-smi --query-gpu=index,name,compute_cap,driver_version,memory.total --format=csv; then
     resubmit_after_preflight_failure
     exit 75

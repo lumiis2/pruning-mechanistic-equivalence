@@ -112,8 +112,10 @@ depends on the corresponding state still existing under `CODEX_HOME`.
   the CUDA preflight, full unit-test suite, and discovery-only smoke test in the
   same Slurm allocation.
 - A GPU/NVML/PyTorch preflight failure submits one successor job automatically,
-  up to eight retries. Only preflight failures trigger this chain; test or
-  experiment failures stop immediately for diagnosis.
+  eligible two minutes later, up to 30 retries. The delay prevents an immediate
+  chain from repeatedly selecting the same idle broken node. Only preflight
+  failures trigger this chain; test or experiment failures stop immediately for
+  diagnosis.
 - The job finishes by running `scripts/validate_mechanistic_smoke.py`; it must
   validate the artifact schema, finite metrics, balanced counts, all four
   groups, and all 120 causal measurements before reporting success.
