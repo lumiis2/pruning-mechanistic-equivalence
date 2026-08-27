@@ -85,6 +85,24 @@ python scripts/run_rewinding.py --config configs/sanity_check.yaml
 python scripts/run_imp.py --config configs/sanity_check.yaml
 ```
 
+Build the artifact-backed model registry and behaviorally matched cohorts:
+
+```bash
+python scripts/build_model_registry.py
+python scripts/find_matched_cohorts.py
+```
+
+The mechanistic characterization is split in advance by
+`configs/mechanistic.yaml`. Validate it cheaply before running discovery:
+
+```bash
+python scripts/run_mechanistic_characterization.py --split discovery --smoke-test
+python scripts/run_mechanistic_characterization.py --split discovery
+```
+
+Do not run `--split evaluation` until the discovery analysis and mechanistic
+signature have been frozen.
+
 IMP supports resumption. Completed rounds are skipped, while an interrupted
 round is recomputed deterministically. Generated checkpoints, masks, metrics,
 predictions, and figures are written under `outputs/` and are not versioned.

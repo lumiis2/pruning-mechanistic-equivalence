@@ -1,0 +1,38 @@
+discovery:
+  seeds: [42, 45]
+  model_ids:
+    - dense-s42
+    - dense-s45
+    - oneshot50-robust-s42
+    - oneshot50-transition-s42
+    - rewind80-init-s42
+    - rewind80-robust-s42
+    - imp-r03-s42
+    - imp-r09-s42
+    - imp-r13-s42
+
+evaluation:
+  seeds: [46]
+  model_ids:
+    - dense-s46
+    - oneshot50-robust-s46
+    - oneshot50-transition-s46
+    - oneshot80-robust-s46
+    - oneshot80-transition-s46
+    - rewind80-init-s46
+    - rewind80-robust-s46
+    - imp-r03-s46
+    - imp-r09-s46
+    - imp-r13-s46
+
+characterization:
+  batch_size: 128
+  probe_epochs: 100
+  spatial_grid: 4
+  channel_patching: true
+  output_dir: outputs/mechanistic_characterization
+  activation_dataset: canonical_balanced_test
+  probe_split: group_stratified_60_20_20
+
+# Do not inspect evaluation results while selecting probes, interventions, or
+# mechanistic hypotheses from the discovery results.
